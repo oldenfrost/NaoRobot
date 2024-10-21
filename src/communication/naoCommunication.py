@@ -27,6 +27,9 @@ class NaoCommunication:
 
 #metodo inicial para que nao empiece su funcion 
     def Start(self, prompt):
+
+        if self.autonomusLife.getState()=="interactive":
+            self.autonomusLife.setState("disabled")
       
         self.tts.setLanguage("Spanish")
         self.tts.setVoice("maki_n16")
@@ -65,10 +68,9 @@ class NaoCommunication:
                 try:
                 # Control de los LEDs
                     self.leds.setIntensity("AllLeds", 0)
-                    self.leds.setIntensity("AllLedsBlue", 0.9)
+                    self.leds.setIntensity("AllLedsBlue", 0.5)
                 except:
                     print('ErrorLeds')
-
                 try:
                     print("Escuchando...")
                     audio = recognizer.listen(source, timeout=3)
@@ -108,9 +110,20 @@ class NaoCommunication:
             if self.autonomusLife.getState()=="interactive":
                 self.autonomusLife.setState("disabled")
             self.naoMovements.Balance()
+     
         else:
             self.TalkNao(prompt, True)
-            self.Listing(posingThread)
+            if "hasta luego" in prompt or "adios" in prompt:
+                if self.autonomusLife.getState()=="interactive":
+                    self.autonomusLife.setState("disabled")
+                try:
+                    self.leds.off('AllLeds')
+                except Exception:
+                    print('Error al apagar leds')  
+                self.naoMovements.StiffnessOff() 
+                return
+                
+        self.Listing(posingThread)
         
        
 #ejecuta la creacion de la accion respectiva segun el ejercicio  
@@ -159,10 +172,13 @@ class NaoCommunication:
         return switch.get(exercise, ['default_action'])
     
     def TalkNao(self,prompt, active):
+
         if self.autonomusLife.getState()=="disabled" and active:
             self.autonomusLife.setState("interactive")
         talk=self.GetOpenAIResponse(self.context, prompt)
         self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(talk.encode('utf-8')))
+
+       
 
 
 

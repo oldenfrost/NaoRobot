@@ -15,12 +15,12 @@ class NaoMovements:
             print("no se pudo crear el",e)
         try:
                 self.postureProxy = ALProxy("ALRobotPosture", ip, port)
-                print(self.postureProxy)
+
         except Exception as e:
             print("no se pudocrear el",e)
 
         self.names=self.GetNames()
-        self.stop_event = threading.Event()
+        self.stopEvent = threading.Event()
         try:
             self.postureProxy.goToPosture("Stand", 0.5)
         except Exception as e:
@@ -38,7 +38,7 @@ class NaoMovements:
         ]
 #animacion para las posiciones 
     def StartPosing(self):
-        while not self.stop_event.is_set():
+        while self.stopEvent.is_set():
             self.LowFrontDoubleBiceps()
             self.HighFrontDoubleBiceps()
             self.SideChest()
@@ -94,8 +94,6 @@ class NaoMovements:
         self.motionProxy.stiffnessInterpolation("Body", 0.0, 1.0)
 
 
-    def StopPosing(self):
-        self.stop_event.set()
 
 #animacion de las sentadillas
     def SquatsUp(self):
@@ -247,7 +245,6 @@ class NaoMovements:
         times       = 2.0                    # seconds
         self.motionProxy.positionInterpolation(effector, space, path,
                                 axisMask, times, isAbsolute)
-        time.sleep(1)
 
 
         names = [
@@ -261,8 +258,17 @@ class NaoMovements:
         -0.3, -16.1, -78.7, 10.7, 14.3, 16.2, 
         ]
         angles = Helpers.GetArrayRadians(angles)
-        times = 2.0 
+        times = 1.0 
         self.motionProxy.angleInterpolation(names, angles, times, True)
+        time.sleep(2)
+        angles = [
+        25.6, -6.5, 43.5, 88.3, 20.2, 1.0, 
+        25.6, 6.5, -43.5, -88.3, -20.2, 1.0,  
+        -0.2, -17.9, -37.4, 59.2, -28.3, 18.0, 
+        ]
+        angles = Helpers.GetArrayRadians(angles)
+        self.motionProxy.angleInterpolation(names, angles, times, True)
+        self.postureProxy.goToPosture("Stand", 0.5)
 
 
 

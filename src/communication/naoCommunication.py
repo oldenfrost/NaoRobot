@@ -19,6 +19,8 @@ class NaoCommunication:
         self.tts = ALProxy("ALTextToSpeech", ip, port)
         self.leds = ALProxy("ALLeds", ip, port)
         self.asp = ALProxy("ALAnimatedSpeech", ip, port)
+        self.autonomusLife = ALProxy("ALAutonomousLife", ip, port)
+        self.motion = ALProxy("ALMotion", ip, port)
         self.naoMovements  = NaoMovements(ip, port)
         self.context = context
         openai.api_key = base64.b64decode(openAiKey)
@@ -33,17 +35,14 @@ class NaoCommunication:
         except:
             print('Error de leds')
 
+        self.naoMovements.stopEvent.set()
         posingThread = threading.Thread(target=self.naoMovements.StartPosing)
         posingThread.start()
-        talk=self.NaoTalk(self.context, prompt)    
-        self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(talk.encode('utf-8')))
-        #print(talk)
-        #listingThread = threading.Thread(target=self.naoMovements.StartPosing)
-        #listingThread.start()
-        self.Listing()
+        self.TalkNao(prompt, False)    
+        self.Listing(posingThread)
 
 #consulta api
-    def NaoTalk(self, context,prompt):
+    def GetOpenAIResponse(self, context, prompt):
         try:
             combinedPrompt=context + "\n" + prompt
             response = openai.Completion.create(
@@ -56,7 +55,7 @@ class NaoCommunication:
             return "los siento Hermano pero hubo un problema con consulta del api de openai" + str(e)
         
 #ejecuta el listing
-    def Listing(self):
+    def Listing(self, posingThread):
         recognizer = sr.Recognizer("es-cr") 
         inputText = ""
 
@@ -78,6 +77,8 @@ class NaoCommunication:
 
             try:
                 inputText = recognizer.recognize(audio)
+
+
             except LookupError:
                 print("Voz no detectada\n")
             if inputText:
@@ -85,13 +86,14 @@ class NaoCommunication:
 
         if isinstance(inputText, str):
             prompt = inputText.decode('utf-8').strip()
+
         else:
             prompt = inputText.strip()
-        
-        print(prompt)
 
-        #response = self.NaoTalk(prompt)
-        #print(response)
+        if self.naoMovements.stopEvent.is_set() :
+            self.naoMovements.stopEvent.clear()
+            posingThread.join()
+
 
         if "squats" in prompt or "sentadilla" in prompt:
             exercise="squats"
@@ -99,16 +101,26 @@ class NaoCommunication:
         if "sit up" in prompt or "abdominales" in prompt:
             exercise="sitUp"
             self.CreateAction(exercise,prompt)
-        if "PushUp" in prompt or "lagartijas" in prompt:
+        if "pushUp" in prompt or "lagartijas" in prompt:
             exercise="pushUp"
             self.CreateAction(exercise,prompt)
+        if "truco" in prompt:
+            if self.autonomusLife.getState()=="interactive":
+                self.autonomusLife.setState("disabled")
+            self.naoMovements.Balance()
+        else:
+            self.TalkNao(prompt, True)
+            self.Listing(posingThread)
+        
        
-
 #ejecuta la creacion de la accion respectiva segun el ejercicio  
     def CreateAction(self, exercise, prompt):
 
+        if self.autonomusLife.getState()=="interactive":
+            self.autonomusLife.setState("disabled")
+            
         context="Proporcióname únicamente el número presente en el siguiente texto."
-        response=self.NaoTalk(context.decode('utf-8').strip(), "'"+prompt+"'")
+        response=self.GetOpenAIResponse(context.decode('utf-8').strip(), "'"+prompt+"'")
         response = response.strip()
         if response.isdigit():
             repetitions = int(response)
@@ -146,6 +158,14 @@ class NaoCommunication:
         }
         return switch.get(exercise, ['default_action'])
     
+    def TalkNao(self,prompt, active):
+        if self.autonomusLife.getState()=="disabled" and active:
+            self.autonomusLife.setState("interactive")
+        talk=self.GetOpenAIResponse(self.context, prompt)
+        self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(talk.encode('utf-8')))
+
+
+
 
  
 

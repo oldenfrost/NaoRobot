@@ -4,22 +4,13 @@ import yaml
 
 from communication.naoCommunication import NaoCommunication 
 from movements.NaoMovements import NaoMovements
+from utils.helpers import Helpers
 
 def main():
-        with open('src/configs/config.yaml', 'r') as file:
-            config = yaml.safe_load(file)
-            ip = config['robot']['ip']
-            port = config['robot']['port']
-            openAiKey = config['robot']['openAiKey']
-            context = config['robot']['context']
-        
-        #naoMovements = NaoMovements(ip, port)
-        #naoMovements.Balance()
-        naoCommunication  = NaoCommunication(ip, port, openAiKey,context)
-        naoCommunication.Start("presentate")
 
-        
-    
+        config=Helpers.GetConfig()
+        naoCommunication  = NaoCommunication(config[0], config[1], config[2],config[3])
+        naoCommunication.Start("presentate")
 
 if __name__ == "__main__":
     main()

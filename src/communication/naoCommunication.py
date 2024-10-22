@@ -41,7 +41,12 @@ class NaoCommunication:
         self.naoMovements.stopEvent.set()
         posingThread = threading.Thread(target=self.naoMovements.StartPosing)
         posingThread.start()
-        self.TalkNao(prompt, False)    
+        try:
+            self.TalkNao(prompt, False)
+        except: 
+            self.naoMovements.stopEvent.clear()
+            posingThread.join()
+              
         self.Listing(posingThread)
 
 #consulta api

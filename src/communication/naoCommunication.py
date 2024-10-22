@@ -9,6 +9,7 @@ import threading
 
 from naoqi import ALProxy
 from movements.NaoMovements import NaoMovements
+from utils.helpers import Helpers
 
 class NaoCommunication:
     def __init__(self, ip, port, openAiKey, context):
@@ -20,34 +21,35 @@ class NaoCommunication:
         self.leds = ALProxy("ALLeds", ip, port)
         self.asp = ALProxy("ALAnimatedSpeech", ip, port)
         self.autonomusLife = ALProxy("ALAutonomousLife", ip, port)
-        self.motion = ALProxy("ALMotion", ip, port)
         self.naoMovements  = NaoMovements(ip, port)
+        self.memory = ALProxy("ALMemory", ip, port)
         self.context = context
         openai.api_key = base64.b64decode(openAiKey)
+        self.memory.subscribeToEvent("FrontTactilTouched", "NaoCommunication", "OnFrontTouch")
+        self.memory.subscribeToEvent("MiddleTactilTouched", "NaoCommunication", "OnMiddleTouch")
+        self.memory.subscribeToEvent("BackTactilTouched", "NaoCommunication", "OnBackTouch")
+        self.posingThread= None
+        self.autonomusLife.setState("disabled")
 
 #metodo inicial para que nao empiece su funcion 
     def Start(self, prompt):
-
-        if self.autonomusLife.getState()=="interactive":
-            self.autonomusLife.setState("disabled")
-      
-        self.tts.setLanguage("Spanish")
-        self.tts.setVoice("maki_n16")
+        self.autonomusLife.setState("disabled")
         try:
             self.leds.on("AllLeds")
         except:
             print('Error de leds')
-
         self.naoMovements.stopEvent.set()
-        posingThread = threading.Thread(target=self.naoMovements.StartPosing)
-        posingThread.start()
+        self.posingThread = threading.Thread(target=self.naoMovements.StartPosing)
+        self.posingThread.start()
+
         try:
             self.TalkNao(prompt, False)
-        except: 
+            self.OnFrontTouch(True)
+        except Exception as e:
             self.naoMovements.stopEvent.clear()
-            posingThread.join()
+            self.posingThread.join()
+            print('Error: '+str(e))
               
-        self.Listing(posingThread)
 
 #consulta api
     def GetOpenAIResponse(self, context, prompt):
@@ -56,14 +58,14 @@ class NaoCommunication:
             response = openai.Completion.create(
                 engine="gpt-3.5-turbo-instruct",
                 prompt=combinedPrompt,
-            max_tokens=300
+            max_tokens=10
             )
             return response.choices[0].text.strip()
         except Exception as e:
             return "los siento Hermano pero hubo un problema con consulta del api de openai" + str(e)
         
 #ejecuta el listing
-    def Listing(self, posingThread):
+    def Listing(self):
         recognizer = sr.Recognizer("es-cr") 
         inputText = ""
 
@@ -78,6 +80,7 @@ class NaoCommunication:
                     print('ErrorLeds')
                 try:
                     print("Escuchando...")
+                    print("por favor hable")
                     audio = recognizer.listen(source, timeout=3)
                 except OSError:
                     continue
@@ -99,44 +102,25 @@ class NaoCommunication:
 
         if self.naoMovements.stopEvent.is_set() :
             self.naoMovements.stopEvent.clear()
-            posingThread.join()
+            self.posingThread.join()
 
-
-        if "squats" in prompt or "sentadilla" in prompt:
-            exercise="squats"
-            self.CreateAction(exercise,prompt)
-        if "sit up" in prompt or "abdominales" in prompt:
-            exercise="sitUp"
-            self.CreateAction(exercise,prompt)
-        if "pushUp" in prompt or "lagartijas" in prompt:
-            exercise="pushUp"
-            self.CreateAction(exercise,prompt)
-        if "truco" in prompt:
-            if self.autonomusLife.getState()=="interactive":
-                self.autonomusLife.setState("disabled")
-            self.naoMovements.Balance()
-     
-        else:
+        option=self.AssignOption(prompt)
+        if(option=="despedida"):
             self.TalkNao(prompt, True)
-            if "hasta luego" in prompt or "adios" in prompt:
-                if self.autonomusLife.getState()=="interactive":
-                    self.autonomusLife.setState("disabled")
-                try:
-                    self.leds.off('AllLeds')
-                except Exception:
-                    print('Error al apagar leds')  
-                self.naoMovements.StiffnessOff() 
-                return
+            self.Finish()
+            return
+        else:
+            self.CreateAction(option,prompt)
+        self.Listing()
+
+           
                 
-        self.Listing(posingThread)
+
         
        
 #ejecuta la creacion de la accion respectiva segun el ejercicio  
     def CreateAction(self, exercise, prompt):
-
-        if self.autonomusLife.getState()=="interactive":
-            self.autonomusLife.setState("disabled")
-            
+        self.autonomusLife.setState("disabled")   
         context="Proporcióname únicamente el número presente en el siguiente texto."
         response=self.GetOpenAIResponse(context.decode('utf-8').strip(), "'"+prompt+"'")
         response = response.strip()
@@ -153,7 +137,7 @@ class NaoCommunication:
     def StartExercise(self, exercise, repetitions):
         repetition=0
         exerciseDetails=self.GetExerciseDetails(exercise)
-        self.naoMovements.StartPositionExercise(exerciseDetails[0])
+
         for _ in range(repetitions):
             method = getattr(self.naoMovements,exerciseDetails[1],None)
             method()
@@ -161,27 +145,83 @@ class NaoCommunication:
             method()
             repetition += 1 
             self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(repetition))
-    
-        if exerciseDetails[0]!="Crouch":
-            self.naoMovements.StartPositionExercise(exerciseDetails[0])
-        else:
-            self.naoMovements.EndPositionPushUp(exerciseDetails[0])
+        self.naoMovements.SetPosition(exerciseDetails[3])
+        
 
 #obtine los metodos para cada ejercicios      
     def GetExerciseDetails(self, exercise):
         switch = {
-            'squats': ['Stand', 'SquatsDown', 'SquatsUp'],
-            'sitUp': ['Sit', 'SitDonw', 'SitUp'],
-            'pushUp': ['Crouch', 'PushDonw', 'PushUp']
+            'sentadillas': ['StartPositionSquad', 'SquatsDown', 'SquatsUp', 'StandZero'],
+            'abdominales': ['StartPositionCrunch', 'SitDonw', 'SitUp', 'Sit'],
+            'lagartijas': ['StartPositionPushUp', 'PushDonw', 'PushUp','LyingBelly']
         }
         return switch.get(exercise, ['default_action'])
     
     def TalkNao(self,prompt, active):
-
-        if self.autonomusLife.getState()=="disabled" and active:
-            self.autonomusLife.setState("interactive")
         talk=self.GetOpenAIResponse(self.context, prompt)
-        self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(talk.encode('utf-8')))
+        if active:
+            self.autonomusLife.setState("interactive")
+        else:
+            self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(talk.encode('utf-8')))
+
+
+    def AssignOption(self,prompt):
+        promptLower=prompt.lower()
+        optionFound=None
+        keywordsDict = Helpers.GetKeywords()
+
+        for option, words in keywordsDict.items():
+            if any(word.decode('utf-8').lower() in promptLower for word in words):
+               optionFound = option 
+               break
+        return optionFound
+
+
+    def Finish(self):
+        self.autonomusLife.setState("disabled")
+        try:
+            self.leds.off('AllLeds')
+        except Exception:
+            print('Error al apagar leds')  
+        self.naoMovements.StiffnessOff()
+
+    
+    def OnFrontTouch(self, value):
+        if value:
+            self.Listing()
+
+    def OnMiddleTouch(self, value):
+        if value: 
+            self.Finish(self)
+            self.Start("presentate")
+     
+
+    def OnBackTouch(self, value):
+        if value: 
+            if self.naoMovements.stopEvent.is_set() :
+                self.naoMovements.stopEvent.clear()
+                self.posingThread.join()
+            self.Finish(self)
+            self.memory.unsubscribeToEvent("FrontTactilTouched", "NaoCommunication")
+            self.memory.unsubscribeToEvent("OnMiddleTouch", "NaoCommunication")
+            self.memory.unsubscribeToEvent("OnBackTouch", "NaoCommunication")
+
+
+            
+
+
+
+
+    
+
+
+
+    
+
+
+
+
+
 
        
 

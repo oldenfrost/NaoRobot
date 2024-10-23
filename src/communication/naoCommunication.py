@@ -125,7 +125,7 @@ class NaoCommunication:
             elif option =="truco":
                 self.naoMovements.Balance() 
             else:
-                self.TalkNao(prompt, True)
+                self.TalkNao(prompt, False)
                 self.CreateAction(option,prompt)
         else:
             self.TalkNao(prompt, True)
@@ -143,6 +143,7 @@ class NaoCommunication:
         else:
             talk=u"No te escuché bien, bro, pero haré 3 reps."
             self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(talk.encode('utf-8')))
+            time.sleep(1)
             self.StartExercise(exercise,3)
             
 
@@ -158,7 +159,7 @@ class NaoCommunication:
             method = getattr(self.naoMovements,exerciseDetails[2],None)
             method()
             repetition += 1 
-            self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(repetition))
+            self.tss.say(format(repetition))
         self.naoMovements.SetPosition(exerciseDetails[3])
         if exerciseDetails[3]=="LyingBelly":
             self.naoMovements.SetPosition("Crouch")
@@ -180,7 +181,7 @@ class NaoCommunication:
             self.autonomusLife.setState("interactive")
             self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(talk.encode('utf-8')))
         else:
-            self.asp.say(format(talk.encode('utf-8')))
+            self.tts.say(format(talk.encode('utf-8')))
 
 
 

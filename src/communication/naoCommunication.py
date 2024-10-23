@@ -122,8 +122,6 @@ class NaoCommunication:
                 self.TalkNao(prompt, True)
                 self.Finish()
                 return
-            elif option =="truco":
-                self.naoMovements.Balance() 
             else:
                 self.TalkNao(prompt, False)
                 self.CreateAction(option,prompt)

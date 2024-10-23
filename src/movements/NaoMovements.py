@@ -322,40 +322,6 @@ class NaoMovements:
         angles = Helpers.GetArrayRadians(angles)
         self.motionProxy.angleInterpolation(self.names, angles, times, True)
     
-    def Balance(self):
-        self.StiffnessOn()
-        self.postureProxy.goToPosture("StandInit", 0.5)
-        space      = motion.FRAME_WORLD
-        axisMask   = almath.AXIS_MASK_ALL   # full control
-        isAbsolute = False
-        effector   = "Torso"
-        path       = [0.0, 0.07, -0.03, 0.0, 0.0, 0.0]
-        times       = 2.0                    # seconds
-        self.motionProxy.positionInterpolation(effector, space, path,
-                                axisMask, times, isAbsolute)
-        names = [
-        "RShoulderPitch", "RShoulderRoll", "RElbowYaw", "RElbowRoll", "RWristYaw", "RHand",
-        "LShoulderPitch", "LShoulderRoll", "LElbowYaw", "LElbowRoll", "LWristYaw", "LHand",
-        "RHipYawPitch", "RHipRoll", "RHipPitch", "RKneePitch", "RAnklePitch", "RAnkleRoll",
-        ]
-        angles = [
-        25.6, -6.5, 43.5, 88.3, 20.2, 1.0, 
-        25.6, 6.5, -43.5, -88.3, -20.2, 1.0,  
-        -0.3, -16.1, -78.7, 10.7, 14.3, 16.2, 
-        ]
-        angles = Helpers.GetArrayRadians(angles)
-        times = 1.0 
-        self.motionProxy.angleInterpolation(names, angles, times, True)
-        time.sleep(2)
-        angles = [
-        25.6, -6.5, 43.5, 88.3, 20.2, 1.0, 
-        25.6, 6.5, -43.5, -88.3, -20.2, 1.0,  
-        -0.2, -17.9, -37.4, 59.2, -28.3, 18.0, 
-        ]
-        angles = Helpers.GetArrayRadians(angles)
-        self.motionProxy.angleInterpolation(names, angles, times, True)
-        self.postureProxy.goToPosture("Stand", 0.5)
-
     def AnimationCrunch(self):
         times = 1.0 
         names = [

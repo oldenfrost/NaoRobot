@@ -179,18 +179,22 @@ class NaoMovements:
 
 
     def StartPositionSquad(self):
-        self.postureProxy.goToPosture("StandZero", 1)
+        self.StiffnessOn()
+        self.postureProxy.goToPosture("StandZero", 0.8)
 
     def StartPositionCrunch(self):
-        self.postureProxy.goToPosture("Sit", 1)
+        self.StiffnessOn()
+        self.postureProxy.goToPosture("Sit", 0.8)
         self.AnimationCrunch()
 
     def SetPosition(self,position):
-        self.postureProxy.goToPosture(position, 1)
+        self.StiffnessOn()
+        self.postureProxy.goToPosture(position, 0.8)
 
 #funcion para ubicar la posicion inicial  
     def StartPositionPushUp(self):
-        self.postureProxy.goToPosture("LyingBelly", 1)
+        self.StiffnessOn()
+        self.postureProxy.goToPosture("LyingBelly", 0.8)
         self.AnimationPushUp()
 
 

@@ -54,7 +54,7 @@ class NaoCommunication:
                 MiddleValue = self.memory.getData("MiddleTactilTouched")
                 BackValue = self.memory.getData("BackTactilTouched")
                 if headValue:
-                    self.OnFrontTouch(headValue)
+                    self.OnFrontTouch()
                     break
                 elif MiddleValue:
                     self.OnMiddleTouch()
@@ -122,17 +122,15 @@ class NaoCommunication:
                 self.TalkNao(prompt, True)
                 self.Finish()
                 return
+            elif option =="truco":
+                self.naoMovements.Balance() 
             else:
+                self.TalkNao(prompt, True)
                 self.CreateAction(option,prompt)
         else:
             self.TalkNao(prompt, True)
         self.Listing()
-
-           
-                
-
-        
-       
+ 
 #ejecuta la creacion de la accion respectiva segun el ejercicio  
     def CreateAction(self, exercise, prompt):
         self.autonomusLife.setState("disabled")   
@@ -162,6 +160,8 @@ class NaoCommunication:
             repetition += 1 
             self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(repetition))
         self.naoMovements.SetPosition(exerciseDetails[3])
+        if exerciseDetails[3]=="LyingBelly":
+            self.naoMovements.SetPosition("Crouch")
         self.naoMovements.SetPosition("Stand")
         
 

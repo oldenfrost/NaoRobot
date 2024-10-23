@@ -44,7 +44,6 @@ class NaoCommunication:
 
         try:
             self.TalkNao(prompt, False)
-            self.OnFrontTouch(True)
         except Exception as e:
             self.naoMovements.stopEvent.clear()
             self.posingThread.join()

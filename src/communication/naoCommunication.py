@@ -32,7 +32,6 @@ class NaoCommunication:
 
 #metodo inicial para que nao empiece su funcion 
     def Start(self, prompt):
-
             self.autonomusLife.setState("disabled")
             try:
                 self.leds.on("AllLeds")
@@ -63,9 +62,6 @@ class NaoCommunication:
                 elif BackValue:
                     self.OnBackTouch()
                     break
-
-
-              
 
 #consulta api
     def GetOpenAIResponse(self, context, prompt):

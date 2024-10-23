@@ -146,6 +146,7 @@ class NaoCommunication:
             repetition += 1 
             self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(repetition))
         self.naoMovements.SetPosition(exerciseDetails[3])
+        self.naoMovements.SetPosition("Stand")
         
 
 #obtine los metodos para cada ejercicios      

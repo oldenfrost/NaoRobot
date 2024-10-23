@@ -116,14 +116,16 @@ class NaoCommunication:
             self.naoMovements.stopEvent.clear()
             self.posingThread.join()
 
-
         option=self.AssignOption(prompt)
-        if(option=="despedida"):
-            self.TalkNao(prompt, True)
-            self.Finish()
-            return
+        if option:
+            if option=="despedida":
+                self.TalkNao(prompt, True)
+                self.Finish()
+                return
+            else:
+                self.CreateAction(option,prompt)
         else:
-            self.CreateAction(option,prompt)
+            self.TalkNao(prompt, True)
         self.Listing()
 
            
@@ -150,7 +152,8 @@ class NaoCommunication:
     def StartExercise(self, exercise, repetitions):
         repetition=0
         exerciseDetails=self.GetExerciseDetails(exercise)
-
+        method = getattr(self.naoMovements,exerciseDetails[0],None)
+        method()
         for _ in range(repetitions):
             method = getattr(self.naoMovements,exerciseDetails[1],None)
             method()

@@ -29,11 +29,10 @@ class NaoCommunication:
         self.memory.subscribeToEvent("MiddleTactilTouched", "NaoCommunication", "OnMiddleTouch")
         self.memory.subscribeToEvent("BackTactilTouched", "NaoCommunication", "OnBackTouch")
         self.posingThread= None
-        self.autonomusLife.setState("disabled")
 
 #metodo inicial para que nao empiece su funcion 
     def Start(self, prompt):
-        while True:
+
             self.autonomusLife.setState("disabled")
             try:
                 self.leds.on("AllLeds")
@@ -51,19 +50,20 @@ class NaoCommunication:
                 print('Error: '+str(e))
             starMessage="Toca mi cabeza para comenzar mi funcio"
             self.asp.say(format(starMessage.encode('utf-8')))
-            headValue = self.memory.getData("FrontTactilTouched")
-            MiddleValue = self.memory.getData("MiddleTactilTouched")
-            BackValue = self.memory.getData("BackTactilTouched")
+            while True:
+                headValue = self.memory.getData("FrontTactilTouched")
+                MiddleValue = self.memory.getData("MiddleTactilTouched")
+                BackValue = self.memory.getData("BackTactilTouched")
+                if headValue:
+                    self.OnFrontTouch()
+                    break
+                elif MiddleValue:
+                    self.OnMiddleTouch()
+                    break
+                elif BackValue:
+                    self.OnBackTouch()
+                    break
 
-            if headValue:
-                self.OnFrontTouch()
-                break
-            elif MiddleValue:
-                self.OnMiddleTouch()
-                break
-            elif BackValue:
-                self.OnBackTouch()
-                break
 
               
 

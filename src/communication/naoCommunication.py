@@ -54,7 +54,7 @@ class NaoCommunication:
                 MiddleValue = self.memory.getData("MiddleTactilTouched")
                 BackValue = self.memory.getData("BackTactilTouched")
                 if headValue:
-                    self.OnFrontTouch()
+                    self.OnFrontTouch(headValue)
                     break
                 elif MiddleValue:
                     self.OnMiddleTouch()
@@ -202,18 +202,15 @@ class NaoCommunication:
         self.naoMovements.StiffnessOff()
 
     
-    def OnFrontTouch(self, value):
-        if value:
+    def OnFrontTouch(self):
             self.Listing()
 
-    def OnMiddleTouch(self, value):
-        if value: 
+    def OnMiddleTouch(self):
             self.Finish(self)
             self.Start("presentate")
      
 
-    def OnBackTouch(self, value):
-        if value: 
+    def OnBackTouch(self):
             if self.naoMovements.stopEvent.is_set() :
                 self.naoMovements.stopEvent.clear()
                 self.posingThread.join()

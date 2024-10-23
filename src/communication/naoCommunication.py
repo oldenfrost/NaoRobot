@@ -33,21 +33,38 @@ class NaoCommunication:
 
 #metodo inicial para que nao empiece su funcion 
     def Start(self, prompt):
-        self.autonomusLife.setState("disabled")
-        try:
-            self.leds.on("AllLeds")
-        except:
-            print('Error de leds')
-        self.naoMovements.stopEvent.set()
-        self.posingThread = threading.Thread(target=self.naoMovements.StartPosing)
-        self.posingThread.start()
+        while True:
+            self.autonomusLife.setState("disabled")
+            try:
+                self.leds.on("AllLeds")
+            except:
+                print('Error de leds')
+            self.naoMovements.stopEvent.set()
+            self.posingThread = threading.Thread(target=self.naoMovements.StartPosing)
+            self.posingThread.start()
 
-        try:
-            self.TalkNao(prompt, False)
-        except Exception as e:
-            self.naoMovements.stopEvent.clear()
-            self.posingThread.join()
-            print('Error: '+str(e))
+            try:
+                self.TalkNao(prompt, False)
+            except Exception as e:
+                self.naoMovements.stopEvent.clear()
+                self.posingThread.join()
+                print('Error: '+str(e))
+            starMessage="Toca mi cabeza para comenzar mi funcio"
+            self.asp.say(format(starMessage.encode('utf-8')))
+            headValue = self.memory.getData("FrontTactilTouched")
+            MiddleValue = self.memory.getData("MiddleTactilTouched")
+            BackValue = self.memory.getData("BackTactilTouched")
+
+            if headValue:
+                self.OnFrontTouch()
+                break
+            elif MiddleValue:
+                self.OnMiddleTouch()
+                break
+            elif BackValue:
+                self.OnBackTouch()
+                break
+
               
 
 #consulta api
@@ -102,6 +119,7 @@ class NaoCommunication:
         if self.naoMovements.stopEvent.is_set() :
             self.naoMovements.stopEvent.clear()
             self.posingThread.join()
+
 
         option=self.AssignOption(prompt)
         if(option=="despedida"):
@@ -161,8 +179,10 @@ class NaoCommunication:
         talk=self.GetOpenAIResponse(self.context, prompt)
         if active:
             self.autonomusLife.setState("interactive")
-        else:
             self.asp.say("^start(animations/Stand/Gestures/Me_1) {} ^wait(animations/Stand/Gestures/Me_1)".format(talk.encode('utf-8')))
+        else:
+            self.asp.say(format(talk.encode('utf-8')))
+
 
 
     def AssignOption(self,prompt):
